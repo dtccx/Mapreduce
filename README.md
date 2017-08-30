@@ -1,1 +1,4 @@
-Please see the instructions for the labs [here](http://news.cs.nyu.edu/~jinyang/fa16-ds/labs/).
+Labs for the Distributed Systems course at NYU Tandon School of Engineering. 
+
+Credits:
+- Jinyang Li @ NYU. 

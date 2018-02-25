@@ -55,6 +55,9 @@ type MapReduce struct {
 	file            string // Name of input file
 	MasterAddress   string
 	registerChannel chan string
+	//use this channel or create new availWorkerChannel like 68 & 83 also works.
+	//I am not sure if using registerchannel is permmitted,
+	//if not, use the new created one, cancel the "//"
 	DoneChannel     chan bool
 	alive           bool
 	l               net.Listener
@@ -64,6 +67,7 @@ type MapReduce struct {
 	Workers map[string]*WorkerInfo
 
 	// add any additional state here
+	//availWorkerChannel chan string
 }
 
 func InitMapReduce(nmap int, nreduce int,
@@ -74,10 +78,11 @@ func InitMapReduce(nmap int, nreduce int,
 	mr.file = file
 	mr.MasterAddress = master
 	mr.alive = true
-	mr.registerChannel = make(chan string)
+	mr.registerChannel = make(chan string, 10)
 	mr.DoneChannel = make(chan bool)
 
 	// initialize any additional state here
+	//mr.availWorkerChannel = make(chan string, 10)
 	return mr
 }
 
@@ -92,6 +97,7 @@ func MakeMapReduce(nmap int, nreduce int,
 func (mr *MapReduce) Register(args *RegisterArgs, res *RegisterReply) error {
 	DPrintf("Register: worker %s\n", args.Worker)
 	mr.registerChannel <- args.Worker
+	//mr.availWorkerChannel <- args.Worker
 	res.OK = true
 	return nil
 }

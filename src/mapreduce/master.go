@@ -30,5 +30,57 @@ func (mr *MapReduce) KillWorkers() *list.List {
 
 func (mr *MapReduce) RunMaster() *list.List {
 	// Your code here
+	mapFinishChannel := make(chan int, nMap)
+	for i := 0; i < mr.nMap; i++ {
+		go func (jobNumber int){
+			for{
+				availWorker := <- mr.registerChannel
+				doJobArgs := &DoJobArgs{}
+				doJobReply := &DoJobReply{}
+				doJobArgs.File = mr.file
+				doJobArgs.Operation = Map
+				doJobArgs.JobNumber = jobNumber
+				doJobArgs.NumOtherPhase = mr.nReduce
+				ok := call(availWorker, "Worker.DoJob", doJobArgs, doJobReply)
+				if ok == true {
+					mr.registerChannel <- availWorker
+					mapFinishChannel <- jobNumber
+					break
+				}
+			}
+		}(i)
+	}
+	//make sure all map are finished
+	for i := 0; i < mr.nMap; i++ {
+		<- mapFinishChannel
+	}
+
+	reduceFinishChannel := make(chan int, nReduce)
+	for i := 0; i < mr.nReduce; i++ {
+		go func (jobNumber int) {
+			for {
+				availWorker := <- mr.registerChannel
+				doJobArgs := &DoJobArgs{}
+				doJobReply := &DoJobReply{}
+				doJobArgs.File = mr.file
+				doJobArgs.Operation = Reduce
+				doJobArgs.JobNumber = jobNumber
+				doJobArgs.NumOtherPhase = mr.nMap
+				ok := call(availWorker, "Worker.DoJob", doJobArgs, doJobReply)
+				if ok == true {
+					mr.registerChannel <- availWorker
+					reduceFinishChannel <- jobNumber
+					break
+				}
+			}
+		}(i)
+	}
+
+	for i := 0; i < mr.nReduce; i++ {
+		<- reduceFinishChannel
+	}
+
+	fmt.Println("master.go finished")
+
 	return mr.KillWorkers()
 }
